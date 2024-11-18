@@ -1,0 +1,2 @@
+particle
+-DCATKIN_DEVEL_PREFIX=/home/noflyfre/AD-assignment3/3_assignment/devel -DCMAKE_INSTALL_PREFIX=/home/noflyfre/AD-assignment3/3_assignment/install -G Unix Makefiles
