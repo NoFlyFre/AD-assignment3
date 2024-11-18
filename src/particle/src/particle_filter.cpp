@@ -174,52 +174,71 @@ LandmarkObs transformation(LandmarkObs observation, Particle p)
  */
 void ParticleFilter::updateWeights(double std_landmark[], std::vector<LandmarkObs> observations, Map map_landmarks)
 {
-    for (auto &particle : particles)
-    {
-        // Step 1: Transform observations
-        std::vector<LandmarkObs> transformed_observations;
-        for (const auto &obs : observations)
-        {
-            transformed_observations.push_back(transformation(obs, particle));
-        }
-
-        // Step 2: Associate observations with landmarks
-        std::vector<LandmarkObs> mapLandmarks;
-        for (const auto &lm : map_landmarks.landmark_list)
-        {
-            mapLandmarks.push_back(LandmarkObs{lm.id_i, lm.x_f, lm.y_f});
-        }
-        dataAssociation(mapLandmarks, transformed_observations);
-
-        // Step 3: Update weights
-        particle.weight = 1.0;
-        double sigma_x = std_landmark[0];
-        double sigma_y = std_landmark[1];
-        double gauss_norm = 1 / (2 * M_PI * sigma_x * sigma_y);
-
-        for (const auto &obs : transformed_observations)
-        {
-            // Find associated landmark
-            LandmarkObs landmark;
-            for (const auto &lm : mapLandmarks)
-            {
-                if (lm.id == obs.id)
-                {
-                    landmark = lm;
-                    break;
-                }
-            }
-
-            // Calculate weight
-            double dx = obs.x - landmark.x;
-            double dy = obs.y - landmark.y;
-            double exponent = (dx * dx) / (2 * sigma_x * sigma_x) + (dy * dy) / (2 * sigma_y * sigma_y);
-            double weight = gauss_norm * exp(-exponent);
-
-            // Multiply particle's weight
-            particle.weight *= weight;
-        }
-    }
+	for (size_t i = 0; i < particles.size(); ++i)
+	{
+	    Particle &particle = particles[i];
+	
+	    // Step 1: Transform observations
+	    std::vector<LandmarkObs> transformed_observations;
+	    for (size_t j = 0; j < observations.size(); ++j)
+	    {
+	        const LandmarkObs &obs = observations[j];
+	        transformed_observations.push_back(transformation(obs, particle));
+	    }
+	
+	    // Step 2: Associate observations with landmarks
+	    std::vector<LandmarkObs> mapLandmarks;
+	    for (size_t j = 0; j < map_landmarks.landmark_list.size(); ++j)
+	    {
+	        const Map::single_landmark_s &lm = map_landmarks.landmark_list[j];
+	        mapLandmarks.push_back(LandmarkObs{lm.id_i, lm.x_f, lm.y_f});
+	    }
+	    dataAssociation(mapLandmarks, transformed_observations);
+	
+	    // Step 3: Update weights
+	    particle.weight = 1.0;
+	    double sigma_x = std_landmark[0];
+	    double sigma_y = std_landmark[1];
+	    double gauss_norm = 1 / (2 * M_PI * sigma_x * sigma_y);
+	
+	    for (size_t j = 0; j < transformed_observations.size(); ++j)
+	    {
+	        const LandmarkObs &obs = transformed_observations[j];
+	
+	        // Find associated landmark
+	        LandmarkObs landmark;
+	        bool landmark_found = false;
+	        for (size_t k = 0; k < mapLandmarks.size(); ++k)
+	        {
+	            if (mapLandmarks[k].id == obs.id)
+	            {
+	                landmark = mapLandmarks[k];
+	                landmark_found = true;
+	                break;
+	            }
+	        }
+	
+	        if (!landmark_found)
+	        {
+	            continue; // Salta questa osservazione se non si trova il landmark
+	        }
+	
+	        // Calculate weight
+	        double dx = obs.x - landmark.x;
+	        double dy = obs.y - landmark.y;
+	        double exponent = (dx * dx) / (2 * sigma_x * sigma_x) + (dy * dy) / (2 * sigma_y * sigma_y);
+	        double weight = gauss_norm * exp(-exponent);
+	
+	        // Evita pesi zero
+	        if (weight == 0)
+	        {
+	            weight = 1e-10;
+	        }
+	
+	        // Multiply particle's weight
+	        particle.weight *= weight;
+	    }
+	}
 }
 
 /*
@@ -230,26 +249,53 @@ void ParticleFilter::resample()
 {
     std::vector<Particle> new_particles;
     std::vector<double> weights;
-    for (const auto &particle : particles)
+    for (size_t i = 0; i < particles.size(); ++i)
     {
-        weights.push_back(particle.weight);
+        weights.push_back(particles[i].weight);
     }
 
-    std::uniform_real_distribution<double> dist_double(0.0, *max_element(weights.begin(), weights.end()));
-    std::uniform_int_distribution<int> dist_int(0, num_particles - 1);
-
-    int index = dist_int(gen);
-    double beta = 0.0;
-
-    for (int i = 0; i < num_particles; ++i)
+    // Normalizza i pesi
+    double total_weight = std::accumulate(weights.begin(), weights.end(), 0.0);
+    if (total_weight == 0.0)
     {
-        beta += dist_double(gen) * 2.0;
-        while (beta > weights[index])
+        for (size_t i = 0; i < weights.size(); ++i)
         {
-            beta -= weights[index];
-            index = (index + 1) % num_particles;
+            weights[i] = 1.0 / num_particles;
         }
-        new_particles.push_back(particles[index]);
     }
+    else
+    {
+        for (size_t i = 0; i < weights.size(); ++i)
+        {
+            weights[i] /= total_weight;
+        }
+    }
+
+    // Resampling Sistematico
+    std::vector<double> cumulative_sum(weights.size(), 0.0);
+    std::partial_sum(weights.begin(), weights.end(), cumulative_sum.begin());
+
+    std::uniform_real_distribution<double> dist_double(0.0, 1.0 / num_particles);
+    double r = dist_double(gen);
+    double step = 1.0 / num_particles;
+    double c = cumulative_sum[0];
+    size_t i = 0;
+
+    for (int m = 0; m < num_particles; ++m)
+    {
+        double U = r + m * step;
+        while (U > c)
+        {
+            i++;
+            if (i >= num_particles)
+            {
+                i = num_particles - 1;
+                break;
+            }
+            c = cumulative_sum[i];
+        }
+        new_particles.push_back(particles[i]);
+    }
+
     particles = new_particles;
 }
