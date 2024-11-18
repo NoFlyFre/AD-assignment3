@@ -90,8 +90,9 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
     std::normal_distribution<double> dist_y(0, std_pos[1]);
     std::normal_distribution<double> dist_theta(0, std_pos[2]);
 
-    for (auto &particle : particles)
+    for (size_t i = 0; i < particles.size(); ++i)
     {
+	Particle &particle = particle[i];
         if (fabs(yaw_rate) < 1e-5)
         {
             // Straight line motion
@@ -123,13 +124,15 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
  */
 void ParticleFilter::dataAssociation(std::vector<LandmarkObs> mapLandmarks, std::vector<LandmarkObs> &observations)
 {
-    for (auto &obs : observations)
+    for (size_t i = 0; i < observations.size(); ++i)
     {
+	LandmarkObs &obs = observations[i];
         double min_distance = std::numeric_limits<double>::max();
         int map_id = -1;
 
-        for (const auto &landmark : mapLandmarks)
+        for (size_t j = 0; j < mapLandmarks.size(); ++j)
         {
+	    const LandmarkObs &landmark = mapLandmarks[j];
             double distance = dist(obs.x, obs.y, landmark.x, landmark.y);
             if (distance < min_distance)
             {
