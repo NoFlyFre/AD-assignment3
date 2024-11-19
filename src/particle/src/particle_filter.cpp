@@ -23,9 +23,9 @@ void ParticleFilter::init_random(double std[], int nParticles) {
     num_particles = nParticles;
     // Define map boundaries (adjust based on your map)
     double x_min = 0.0;
-    double x_max = 20.0;
+    double x_max = 10.0;
     double y_min = 0.0;
-    double y_max = 20.0;
+    double y_max = 10.0;
 
     std::uniform_real_distribution<double> dist_x(x_min, x_max);
     std::uniform_real_distribution<double> dist_y(y_min, y_max);
@@ -96,8 +96,12 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
             // Rotational motion
             particle.x += (velocity / yaw_rate) * (sin(particle.theta + yaw_rate * delta_t) - sin(particle.theta));
             particle.y += (velocity / yaw_rate) * (-cos(particle.theta + yaw_rate * delta_t) + cos(particle.theta));
-            particle.theta += yaw_rate * delta_t;
         }
+	particle.theta += yaw_rate * delta_t;
+
+	while(particle.theta > M_PI) particle.theta -= 2.0*M_PI;
+	while(particle.theta < -M_PI) particle.theta += 2.0*M_PI;
+
         // Add Gaussian noise
         particle.x += dist_x(gen);
         particle.y += dist_y(gen);
