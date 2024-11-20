@@ -1,48 +1,66 @@
-Academic Year: 2024/2025
 
-* Assignment #4 Particle filter localization:
-    - Objectives: Localize a forklift using the LiDAR and landmarks as reference
-    - Tasks evaluated (15 points):	
-        + Particle filter works and localizes the vehicle during the whole simulation (7 points) 
-			* In the code you will find different TODOs. The main tasks are related to the initialization, prediction, update, resampling and etc... (see the slides and source code)
-            * The random and guess initialization implementation is 1 point
-            * The quality of the code and optimizations of the code will be positively evaluated (try to surprise me)
-			* Note: Please send me the source code of the best localization solution you are able to achieve.
+# Implementazione di un Particle Filter per la Localizzazione di un Carrello Elevatore
 
-        + Report describing the particle filter performance under different scenarios. Just one-two-three paragraphs by scenario. Each paragraph should include a discussion of the trajectory estimated and execution time (3 points)
-			* As we have seen during the lectures, the particle filter performance can be influenced by different factors (number of particles, error of the sensors or motion model...).
-			* After executing the particle filter algorithm, a file called "res.txt" will be produced. This file will contain information regarding the estimation in X,Y coordinates of the best particle; the ground truth in X,Y coordinates; and the execution time of your solution (from initialization to resampling). All this information is used to compute the output that can be seen after executing "plotter.py"
-			* The more the scenarios the higher the grade. Originality and quality of the report will be considered to determine grades (number of scenarios required is 3)
-			* Note: The report shall include the description of the scenario, the trajectory of the forklift and the configuration used.
-        
-        + Implement your own resampling method and explain it (2 points)
-            * https://bisite.usal.es/archivos/resampling_methods_for_particle_filtering_classification_implementation_and_strategies.pdf
+## Descrizione del Progetto
 
-	    + Implement any functionality on top of the particle filter. Optimize the code, any improvement will be positively (very) evaluated (3 points or more)
-            * Any other data association technique
-            * Explore the idea of combining a particle filter with a Kalman filter to improve the localization process
-            * Implement an adaptive particle filter where the number of particles and resampling frequency adjusts dynamically based on the uncertainty in the system
-            * ...........
+In questo progetto, è stato implementato un Particle Filter per la localizzazione di un carrello elevatore utilizzando dati LiDAR e landmark come riferimento. L’obiettivo è sviluppare un filtro in grado di stimare con precisione la posizione del veicolo durante l’intera simulazione, analizzando l’effetto di diversi parametri sul suo comportamento.
 
-* ROS bag:
-    - Download the log file here: https://cloud.hipert.unimore.it/s/3y4DgMQDbTGK6WL
+## Struttura del Progetto
 
-* OS requirements:
-	- ROS (the installation command depends on the Linux distribution)SS
-		Example: sudo apt install ros-melodic-desktop-full (this one applies to Ubuntu 18)        
-    
-* Instructions to compile the code:
-        Open one terminal and run the following command: roscore
-        To compile the code run this command in a different terminal (in the root folder): catkin_make 
-	    The executable can be found in: ./devel/lib/particle/particle_node (run this command in a terminal to start the execution)
-        As soon as you launch the executable you can start the simulation. To do so, open another terminal and write:
-            rosbag play --clock --hz=10 out.bag    // this command allows to read all the data at 10hz (we do this for avoiding a lot of predictions without updating)
-        The executable generates a file called 'res.txt'
-	To generate the plot just write: "python3 plotter.py" (pay attention to the output file called res.txt with the trajectory and execution time of your implementation) 
-	
-* Important Note:
-    - All the TODOs are in the file called "particle_filter.cpp" & "main.cpp" but you are more than free to modify any source file
-    - In the folder you find 2 txt files:
-        * pf_slam.txt: Hipert's 'best' particle filter implementation
-        * res.txt: Nacho's 'prototype' particle filter implementation (feel free to use my result as reference)
+Il progetto contiene i seguenti file, che son stati modificati e creati per l'assignment:
+- **src/particle_filter/src/particle_filter.cpp**: Implementazione del Particle Filter con tutte le funzioni necessarie.
+- **src/particle_filter/src/main.cpp**: File principale che esegue il filtro utilizzando i dati di input.
+- **assignment3.pdf**: Report dettagliato del progetto, contenente l’analisi e i risultati degli esperimenti.
+- **README.md**: Questo file, contenente la descrizione del progetto e le istruzioni.
 
+## Istruzioni per l’Esecuzione
+
+Per eseguire il progetto, seguire i seguenti passaggi:
+
+### 1. Prerequisiti
+- Sistema operativo Ubuntu 18.04 o 20.04.
+- ROS (Robot Operating System) installato e configurato.
+- ROS package `rosbag` per la riproduzione dei dati.
+- Eseguire `source /opt/ros/melodic/setup.sh` in ogni terminale che si andrà ad aprire.
+- Scaricare il file `out.bag`
+
+### 2. Compilazione del Codice
+- Posizionarsi nella cartella root del progetto.
+- Eseguire il comando `catkin_make` per compilare il progetto.
+
+### 3. Esecuzione
+- Avviare ROS eseguendo, in un terminale separato:
+  ```bash
+  roscore
+  ```
+- Lanciare il nodo ROS eseguendo:
+  ```bash
+  ./devel/lib/particle/particle_node
+  ```
+- In un altro terminale, riprodurre il rosbag con i dati utilizzando:
+  ```bash
+  rosbag play --clock --hz=10 out.bag
+  ```
+  
+## Esperimenti e Risultati
+
+Sono stati eseguiti tre esperimenti variando il numero di particelle e i parametri di rumore, per osservare l’effetto su precisione e stabilità del filtro. I risultati dettagliati, inclusi i grafici e le analisi, sono disponibili nel report **assignment3.pdf**.
+
+---
+
+## Nota al Professore
+
+Gentile Professore,
+
+Desidero informarla che ho caricato il progetto con un leggero ritardo rispetto alla scadenza prevista. Ho incontrato diverse difficoltà nel configurare l’ambiente ROS a causa del mio sistema operativo (macOS) e dell’architettura Apple Silicon (ARM). 
+
+Inizialmente, ho provato a utilizzare ROS tramite Docker su Ubuntu 18, forwardando la GUI con XQuartz, ma senza successo. Successivamente, ho tentato con una macchina virtuale, installando Ubuntu 18 Server e aggiungendo manualmente l’ambiente desktop, ma anche questa soluzione non ha funzionato. 
+
+Infine, ho dovuto utilizzare un PC con architettura x86, dove sono riuscito a installare Ubuntu e avviare ROS. Tuttavia, queste difficoltà tecniche mi hanno sottratto tempo prezioso, riducendo quello disponibile per lavorare sul codice.
+
+Attualmente, il codice è funzionante e sono riuscito a completare tutti i punti richiesti, inclusi gli esperimenti con le varie configurazioni.
+
+Mi scuso per il ritardo nella consegna e spero che possa tenerne conto.
+
+Cordiali saluti,  
+**Francesco Caligiuri**
